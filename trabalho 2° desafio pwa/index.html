@@ -4,14 +4,202 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-bytes</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#303f9f">
 </head>
 <body>
     <nav>
         <button onclick="mostrarApp('imc')">CALCULADORA DE IMC.</button>
         <button onclick="mostrarApp('cronometro')">CRONOMETRO/TEMP.</button>
-        <button onclick="mostrarApp('clima')">CLIMA.</button>
     </nav>
 
-    <section id="AppIMC" class="app-section"></section>
+    <section id="AppIMC" class="app-section">
+    <h2>Calculadora de IMC</h2>
+    <div id="imc-input">
+      <div>
+        <label for="peso">Peso (KG): </label>
+        <input type="number" id="peso" placeholder="Ex: 70" step="0.1">
+      </div>
+      <div>
+        <label for="altura">Altura (M): </label>
+        <input type="number" id="altura" placeholder="Ex: 1.75" step="0.01">
+      </div>
+      <button onclick="calcularIMC()">Calcular</button>
+      <p>Seu IMC é : <strong id="resultadoIMC">--</strong></p>
+    </div>
+    </section>
+
+    <section id="appTimer" class ="app-section hidden">
+        <h2>Cronometro e Temporizador</h2>
+        <p id="display-timer">00:00:00</p>
+
+        <h3>Cronometro</h3>
+        <div id="botoesTimer">
+            <button id="botaoParar" onclick="trocarCronometro">Iniciar</button>
+            <button onclick="ReiniciarCronometro">Zerar</button>
+        </div>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>Temporizador</h3>
+        <input type="number" id="minutos" placeholder="Minutos" value="0" min="1">
+        <input type="number" id="segundos" placeholder="Segundos" value="0">
+        <button onclick="ComeçarContador">?Iniciar Contagem</button>
+        <button onclick="ReiniciarContador">Zerar</button>
+        <p id="status"></p>
+    </section>
+
+    <script>
+        // VARIÁVEIS GLOBAIS
+let stopwatchInterval;
+let stopwatchTime = 0;
+let countdownInterval;
+let countdownRemaining = 0;
+let isStopwatchRunning = false;
+
+// --- GERENCIAMENTO DE TELA (Navegação) ---
+function showApp(appName) {
+    // Esconde todas as seções
+    document.querySelectorAll('.app-section').forEach(section => {
+        section.classList.add('hidden');
+    });
+    // Mostra a seção desejada
+    const appElement = document.getElementById(`app-${appName}`);
+    if (appElement) {
+        appElement.classList.remove('hidden');
+    }
+}
+
+// Inicializa mostrando a calculadora de IMC
+document.addEventListener('DOMContentLoaded', () => {
+    showApp('imc');
+    // Registra o Service Worker (Base para o PWA)
+    registerServiceWorker();
+});
+
+
+// --- 1. CALCULADORA DE IMC ---
+function calcularIMC() {
+    const peso = parseFloat(document.getElementById('peso').value);
+    const altura = parseFloat(document.getElementById('altura').value);
+    const resultadoElement = document.getElementById('resultadoIMC');
+
+    if (isNaN(peso) || isNaN(altura) || peso <= 0 || altura <= 0) {
+        resultadoElement.textContent = "Preencha peso e altura válidos.";
+        return;
+    }
+
+    const imc = peso / (altura * altura);
+    resultadoElement.textContent = imc.toFixed(2);
+    
+    // Opcional: Adicionar a classificação do IMC
+    let classificacao = '';
+    if (imc < 18.5) classificacao = ' (Abaixo do peso)';
+    else if (imc < 24.9) classificacao = ' (Peso normal)';
+    else if (imc < 29.9) classificacao = ' (Sobrepeso)';
+    else classificacao = ' (Obesidade)';
+
+    resultadoElement.textContent += classificacao;
+}
+
+// --- 3. CRONÔMETRO E TEMPORIZADOR ---
+
+// Função para formatar o tempo em HH:MM:SS
+function formatTime(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+// CRONÔMETRO (Stopwatch)
+function updateStopwatch() {
+    stopwatchTime++;
+    document.getElementById('display-timer').textContent = formatTime(stopwatchTime);
+}
+
+function toggleStopwatch() {
+    const btn = document.getElementById('start-stop-btn');
+    if (isStopwatchRunning) {
+        clearInterval(stopwatchInterval);
+        btn.textContent = 'Continuar';
+        isStopwatchRunning = false;
+    } else {
+        // Usa setInterval para atualizar a cada 1000ms (1 segundo)
+        stopwatchInterval = setInterval(updateStopwatch, 1000);
+        btn.textContent = 'Parar';
+        isStopwatchRunning = true;
+    }
+}
+
+function resetStopwatch() {
+    clearInterval(stopwatchInterval);
+    stopwatchTime = 0;
+    isStopwatchRunning = false;
+    document.getElementById('display-timer').textContent = '00:00:00';
+    document.getElementById('start-stop-btn').textContent = 'Iniciar';
+}
+
+
+// TEMPORIZADOR (Countdown)
+function updateCountdown() {
+    if (countdownRemaining <= 0) {
+        clearInterval(countdownInterval);
+        document.getElementById('display-timer').textContent = '00:00:00';
+        document.getElementById('countdown-status').textContent = 'TEMPO ESGOTADO!';
+        alert('Tempo Esgotado!');
+        return;
+    }
+    
+    countdownRemaining--;
+    document.getElementById('display-timer').textContent = formatTime(countdownRemaining);
+}
+
+function startCountdown() {
+    // Parar qualquer temporizador anterior
+    clearInterval(countdownInterval);
+    document.getElementById('countdown-status').textContent = '';
+
+    const minutes = parseInt(document.getElementById('tempo-minutos').value) || 0;
+    const seconds = parseInt(document.getElementById('tempo-segundos').value) || 0;
+    
+    countdownRemaining = (minutes * 60) + seconds;
+
+    if (countdownRemaining <= 0) {
+        document.getElementById('countdown-status').textContent = 'Defina um tempo maior que zero.';
+        return;
+    }
+
+    // Iniciar a contagem regressiva
+    document.getElementById('display-timer').textContent = formatTime(countdownRemaining);
+    countdownInterval = setInterval(updateCountdown, 1000);
+    document.getElementById('countdown-status').textContent = 'Contagem em andamento...';
+}
+
+function resetCountdown() {
+    clearInterval(countdownInterval);
+    countdownRemaining = 0;
+    document.getElementById('display-timer').textContent = '00:00:00';
+    document.getElementById('countdown-status').textContent = 'Temporizador parado.';
+}
+
+
+// --- 4. FUNCIONALIDADE PWA BÁSICA (Service Worker) ---
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+            console.log('Service Worker registrado com sucesso:', registration);
+        })
+        .catch(error => {
+            console.error('Falha no registro do Service Worker:', error);
+        });
+    } else {
+        console.warn('Seu navegador não suporta Service Workers.');
+    }
+}
+    </script>
 </body>
 </html>
