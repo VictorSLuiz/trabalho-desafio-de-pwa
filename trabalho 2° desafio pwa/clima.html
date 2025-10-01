@@ -74,7 +74,178 @@
     </section>
 
     <script>
-        // O código JS virá aqui na próxima seção!
+        // VARIÁVEIS GLOBAIS
+let stopwatchInterval;
+let stopwatchTime = 0;
+let countdownInterval;
+let countdownRemaining = 0;
+let isStopwatchRunning = false;
+
+// --- GERENCIAMENTO DE TELA (Navegação) ---
+function showApp(appName) {
+    // Esconde todas as seções
+    document.querySelectorAll('.app-section').forEach(section => {
+        section.classList.add('hidden');
+    });
+    // Mostra a seção desejada
+    const appElement = document.getElementById(`app-${appName}`);
+    if (appElement) {
+        appElement.classList.remove('hidden');
+    }
+}
+
+// Inicializa mostrando a calculadora de IMC
+document.addEventListener('DOMContentLoaded', () => {
+    showApp('imc');
+    // Registra o Service Worker (Base para o PWA)
+    registerServiceWorker();
+});
+
+
+// --- 1. CALCULADORA DE IMC ---
+function calcularIMC() {
+    const peso = parseFloat(document.getElementById('peso').value);
+    const altura = parseFloat(document.getElementById('altura').value);
+    const resultadoElement = document.getElementById('resultado-imc');
+
+    if (isNaN(peso) || isNaN(altura) || peso <= 0 || altura <= 0) {
+        resultadoElement.textContent = "Preencha peso e altura válidos.";
+        return;
+    }
+
+    const imc = peso / (altura * altura);
+    resultadoElement.textContent = imc.toFixed(2);
+    
+    // Opcional: Adicionar a classificação do IMC
+    let classificacao = '';
+    if (imc < 18.5) classificacao = ' (Abaixo do peso)';
+    else if (imc < 24.9) classificacao = ' (Peso normal)';
+    else if (imc < 29.9) classificacao = ' (Sobrepeso)';
+    else classificacao = ' (Obesidade)';
+
+    resultadoElement.textContent += classificacao;
+}
+
+
+// --- 2. CLIMA (Simulado) ---
+function obterClima() {
+    // Em um PWA real, você faria uma chamada fetch() para uma API
+    // Exemplo: fetch('https://api.openweathermap.org/data/2.5/weather?q=...');
+    
+    // Simulação para manter o projeto em um único arquivo
+    document.getElementById('temperatura').textContent = '25°C';
+    document.getElementById('condicao').textContent = 'Ensolarado';
+    
+    // Opcional: Usar a API de Geolocalização do navegador
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+            console.log("Localização obtida. Em um app real, buscaríamos o clima aqui.");
+        }, (error) => {
+            console.warn(`Erro de localização: ${error.message}`);
+        });
+    }
+}
+
+
+// --- 3. CRONÔMETRO E TEMPORIZADOR ---
+
+// Função para formatar o tempo em HH:MM:SS
+function formatTime(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+// CRONÔMETRO (Stopwatch)
+function updateStopwatch() {
+    stopwatchTime++;
+    document.getElementById('display-timer').textContent = formatTime(stopwatchTime);
+}
+
+function toggleStopwatch() {
+    const btn = document.getElementById('start-stop-btn');
+    if (isStopwatchRunning) {
+        clearInterval(stopwatchInterval);
+        btn.textContent = 'Continuar';
+        isStopwatchRunning = false;
+    } else {
+        // Usa setInterval para atualizar a cada 1000ms (1 segundo)
+        stopwatchInterval = setInterval(updateStopwatch, 1000);
+        btn.textContent = 'Parar';
+        isStopwatchRunning = true;
+    }
+}
+
+function resetStopwatch() {
+    clearInterval(stopwatchInterval);
+    stopwatchTime = 0;
+    isStopwatchRunning = false;
+    document.getElementById('display-timer').textContent = '00:00:00';
+    document.getElementById('start-stop-btn').textContent = 'Iniciar';
+}
+
+
+// TEMPORIZADOR (Countdown)
+function updateCountdown() {
+    if (countdownRemaining <= 0) {
+        clearInterval(countdownInterval);
+        document.getElementById('display-timer').textContent = '00:00:00';
+        document.getElementById('countdown-status').textContent = 'TEMPO ESGOTADO!';
+        alert('Tempo Esgotado!');
+        return;
+    }
+    
+    countdownRemaining--;
+    document.getElementById('display-timer').textContent = formatTime(countdownRemaining);
+}
+
+function startCountdown() {
+    // Parar qualquer temporizador anterior
+    clearInterval(countdownInterval);
+    document.getElementById('countdown-status').textContent = '';
+
+    const minutes = parseInt(document.getElementById('tempo-minutos').value) || 0;
+    const seconds = parseInt(document.getElementById('tempo-segundos').value) || 0;
+    
+    countdownRemaining = (minutes * 60) + seconds;
+
+    if (countdownRemaining <= 0) {
+        document.getElementById('countdown-status').textContent = 'Defina um tempo maior que zero.';
+        return;
+    }
+
+    // Iniciar a contagem regressiva
+    document.getElementById('display-timer').textContent = formatTime(countdownRemaining);
+    countdownInterval = setInterval(updateCountdown, 1000);
+    document.getElementById('countdown-status').textContent = 'Contagem em andamento...';
+}
+
+function resetCountdown() {
+    clearInterval(countdownInterval);
+    countdownRemaining = 0;
+    document.getElementById('display-timer').textContent = '00:00:00';
+    document.getElementById('countdown-status').textContent = 'Temporizador parado.';
+}
+
+
+// --- 4. FUNCIONALIDADE PWA BÁSICA (Service Worker) ---
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+            console.log('Service Worker registrado com sucesso:', registration);
+        })
+        .catch(error => {
+            console.error('Falha no registro do Service Worker:', error);
+        });
+    } else {
+        console.warn('Seu navegador não suporta Service Workers.');
+    }
+}
+
     </script>
 </body>
 </html>
