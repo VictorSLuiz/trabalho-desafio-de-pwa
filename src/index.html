@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+
+    <title>Conversor de Medidas (m/cm)</title>
+    <style>
+        /* 1. RESET BÁSICO E CONFIGURAÇÃO DA FONTE */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte moderna */
+            background-color: #f4f4f9; /* Fundo suave e claro */
+            margin: 0;
+            display: flex;
+            justify-content: center; /* Centraliza o conteúdo horizontalmente */
+            align-items: center; /* Centraliza o conteúdo verticalmente */
+            min-height: 100vh; /* Garante que o corpo ocupe a altura total da tela */
+        }
+
+        /* 2. ESTILO PRINCIPAL DA SEÇÃO (O Card) */
+        section {
+            background-color: #ffffff; /* Fundo branco para o card */
+            padding: 30px;
+            border-radius: 12px; /* Cantos levemente arredondados */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* Sombra suave para profundidade */
+            width: 90%;
+            max-width: 400px; /* Limita a largura máxima em telas maiores */
+            text-align: center;
+        }
+
+        /* 3. ESTILO DOS ELEMENTOS DE INPUT, SELECT E LABEL */
+        label {
+            display: block; /* Garante que cada label ocupe sua própria linha */
+            text-align: left;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: 600; /* Texto da label mais forte */
+            color: #333;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%; /* Ocupa a largura total do container */
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc; /* Borda cinza suave */
+            border-radius: 8px;
+            box-sizing: border-box; /* Garante que padding e borda sejam incluídos na largura */
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #007bff; /* Borda azul ao focar */
+            outline: none; /* Remove o contorno padrão */
+        }
+
+        /* 4. ESTILO DO BOTÃO DE CÁLCULO */
+        #botaoCalcular {
+            background-color: #007bff; /* Cor primária azul */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 700;
+            width: 100%;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #botaoCalcular:hover {
+            background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
+        }
+
+        #botaoCalcular:active {
+            transform: translateY(1px); /* Pequeno efeito de clique */
+        }
+
+        /* 5. ESTILO DO RESULTADO */
+        #ResultadoConversao {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #e9ecef; /* Fundo leve para destacar o resultado */
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #007bff; /* Resultado na cor primária */
+        }
+
+    </style>
+</head>
+<body>
+    <section name="Conversor de Medidas">
+        <label for="valorParaConverter">Valor a Converter:</label>
+        <input type="number" id="valorParaConverter" step="0.01" placeholder="Ex: 1.5 (metros) ou 150 (cm)">
+        
+        <label for="ConversorMedidas">Escolha as conversões</label>
+        <select id="ConversorMedidas">
+            <option value="escolha">Escolha o que deseja converter</option>
+            <option value="paraMetros">Converter para Metros</option>
+            <option value="paraCentimetros">Converter para Centímetros</option>
+        </select>
+        
+        <button id="botaoCalcular" type="submit">Calcular</button>
+        
+        <p id="ResultadoConversao"></p>
+    </section>
+
+    <script>
+        // GARANTINDO QUE O CÓDIGO SÓ RODE APÓS O CARREGAMENTO DO HTML
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // 1. REFERÊNCIAS DOS ELEMENTOS (Document Object Model - DOM)
+            // Pegamos os elementos HTML pelos seus IDs para manipulá-los no JS.
+            const inputValor = document.getElementById('valorParaConverter');
+            const selectConversor = document.getElementById('ConversorMedidas');
+            const resultadoElemento = document.getElementById('ResultadoConversao');
+            const botaoCalcular = document.getElementById('botaoCalcular'); // Melhor usar um ID aqui!
+
+            // 2. ADICIONANDO UM OUVINTE DE EVENTOS (EVENT LISTENER)
+            // A função anônima será executada toda vez que o botão for clicado.
+            botaoCalcular.addEventListener('click', function(event) {
+                event.preventDefault(); // Impede o recarregamento da página (comportamento padrão de 'submit').
+
+                // 3. OBTENDO OS DADOS DE ENTRADA
+                const tipoConversao = selectConversor.value; // Pega o valor (ex: 'paraMetros') do dropdown.
+                const valorString = inputValor.value;       // Pega o valor digitado (ainda como texto/string).
+                
+                // 4. VALIDAÇÃO E CONVERSÃO
+                if (valorString === "") {
+                    resultadoElemento.textContent = "Por favor, insira um valor.";
+                    return; // Encerra a função.
+                }
+
+                // Converte a string para um número decimal, pronto para o cálculo.
+                let valor = parseFloat(valorString); 
+
+                if (isNaN(valor)) {
+                    resultadoElemento.textContent = "Valor inválido. Insira apenas números.";
+                    return;
+                }
+
+                // 5. LÓGICA DE CONVERSÃO (O switch verifica a opção escolhida)
+                let resultado;
+                let unidadeOrigem;
+                let unidadeDestino;
+
+                switch (tipoConversao) {
+                    case 'paraMetros':
+                        // CONVERSÃO DE CENTÍMETROS PARA METROS (cm / 100)
+                        resultado = valor / 100;
+                        unidadeOrigem = "Centímetros";
+                        unidadeDestino = "Metros";
+                        break;
+                        
+                    case 'paraCentimetros':
+                        // CONVERSÃO DE METROS PARA CENTÍMETROS (metros * 100)
+                        resultado = valor * 100;
+                        unidadeOrigem = "Metros";
+                        unidadeDestino = "Centímetros";
+                        break;
+                        
+                    default:
+                        resultadoElemento.textContent = 'Escolha uma conversão válida.';
+                        return; // Encerra a função se não houver opção válida.
+                }
+
+                // 6. EXIBIÇÃO DO RESULTADO
+                // O toFixed(2) limita o resultado a duas casas decimais, evitando números longos (ex: 1.666666).
+                resultadoElemento.textContent = `${valor} ${unidadeOrigem} = ${resultado.toFixed(2)} ${unidadeDestino}`;
+            });
+        });
+    </script>
+</body>
+</html>
