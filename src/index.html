@@ -95,14 +95,16 @@
 </head>
 <body>
     <section name="Conversor de Medidas">
-        <label for="valorParaConverter">Valor a Converter:</label>
-        <input type="number" id="valorParaConverter" step="0.01" placeholder="Ex: 1.5 (metros) ou 150 (cm)">
         
         <label for="ConversorMedidas">Escolha as conversões</label>
         <select id="ConversorMedidas">
             <option value="escolha">Escolha o que deseja converter</option>
             <option value="paraMetros">Converter para Metros</option>
             <option value="paraCentimetros">Converter para Centímetros</option>
+
+            <label for="valorParaConverter">Valor a Converter:</label>
+            <input type="number" id="valorParaConverter" step="0.01" placeholder="Ex: 1.5 (metros) ou 150 (cm)">
+
         </select>
         
         <button id="botaoCalcular" type="submit">Calcular</button>
